@@ -1,0 +1,54 @@
+name: APK
+
+# A cada push na main: compila o APK assinado e publica no release "ultima".
+# Link fixo para baixar: https://github.com/JVHubert/journal-apk/releases/download/ultima/journal.apk
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['README.md']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apk
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.11.1"
+
+      - name: Chave de assinatura
+        env:
+          CHAVE_B64: ${{ secrets.CHAVE_B64 }}
+        run: echo "$CHAVE_B64" | base64 -d > "$RUNNER_TEMP/chave.p12"
+
+      - name: Compilar
+        env:
+          CHAVE_ARQUIVO: ${{ runner.temp }}/chave.p12
+          CHAVE_SENHA: ${{ secrets.CHAVE_SENHA }}
+          CHAVE_ALIAS: journal
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Publicar
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk journal.apk
+          CASCA=$(cat CASCA.txt | tr -d '[:space:]')
+          gh release delete ultima --yes --cleanup-tag || true
+          gh release create ultima journal.apk \
+            --title "Journal (casca $CASCA)" \
+            --notes "Baixe journal.apk no celular e instale. Para atualizar, instale por cima. As telas do Journal se atualizam sozinhas; este app só muda quando o número da casca sobe."

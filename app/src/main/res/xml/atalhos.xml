@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="entrevista"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atalho_entrevista">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://jvhubert.github.io/johnnys-journal/#entrevista"
+            android:targetClass="io.github.jvhubert.journal.MainActivity"
+            android:targetPackage="io.github.jvhubert.journal" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="hoje"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/atalho_hoje">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://jvhubert.github.io/johnnys-journal/#tarefas-hoje"
+            android:targetClass="io.github.jvhubert.journal.MainActivity"
+            android:targetPackage="io.github.jvhubert.journal" />
+    </shortcut>
+</shortcuts>

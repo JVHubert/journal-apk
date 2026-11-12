@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Journal</string>
+    <string name="asset_statements" translatable="false">[{\"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": {\"namespace\": \"web\", \"site\": \"https://jvhubert.github.io\"}}]</string>
+    <string name="share_target" translatable="false">{\"action\": \"https://jvhubert.github.io/johnnys-journal/\", \"method\": \"GET\", \"params\": {\"title\": \"title\", \"text\": \"text\", \"url\": \"url\"}}</string>
+    <string name="atalho_hoje" translatable="false">Tarefas de hoje</string>
+    <string name="atalho_entrevista" translatable="false">Entrevista do dia</string>
+</resources>
