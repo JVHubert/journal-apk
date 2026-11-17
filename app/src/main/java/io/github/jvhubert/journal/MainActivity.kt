@@ -14,6 +14,9 @@ import android.provider.MediaStore
 import android.view.WindowInsets
 import android.webkit.CookieManager
 import android.webkit.PermissionRequest
+import android.webkit.ServiceWorkerClient
+import android.webkit.ServiceWorkerController
+import android.webkit.WebResourceResponse
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -35,6 +38,8 @@ class MainActivity : Activity() {
         private const val PEDIDO_MICROFONE = 10
         private const val PEDIDO_AVISOS = 11
         private const val ESCOLHER_ARQUIVO = 20
+        private const val PEDIDO_GALERIA = 12
+        private const val APAGAR_FOTOS = 30
     }
 
     lateinit var web: WebView
@@ -42,6 +47,8 @@ class MainActivity : Activity() {
     private var permissaoPendente: PermissionRequest? = null
     private var arquivoPendente: ValueCallback<Array<Uri>>? = null
     private var fotoDaCamera: Uri? = null
+    private val esperandoGaleria = mutableListOf<(Boolean) -> Unit>()
+    private var apagarPendente: String? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -81,6 +88,10 @@ class MainActivity : Activity() {
         web.setBackgroundColor(Color.parseColor("#120B09"))
         web.addJavascriptInterface(Ponte(this), "JJNativo")
         web.webViewClient = Cliente()
+        // As imagens da galeria (endereço interno __galeria) também respondem quando o pedido passa pelo service worker.
+        ServiceWorkerController.getInstance().setServiceWorkerClient(object : ServiceWorkerClient() {
+            override fun shouldInterceptRequest(request: WebResourceRequest): WebResourceResponse? = Galeria.interceptar(this@MainActivity, request.url.toString())
+        })
         web.webChromeClient = Cromo()
 
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -146,7 +157,34 @@ class MainActivity : Activity() {
         }
     }
 
+    /** Pede a permissão de ler as fotos (uma vez). No Android 14, "só algumas fotos" também vale. */
+    fun comGaleria(seguir: (Boolean) -> Unit) {
+        val perms = when {
+            Build.VERSION.SDK_INT >= 34 -> arrayOf(Manifest.permission.READ_MEDIA_IMAGES, Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+            Build.VERSION.SDK_INT >= 33 -> arrayOf(Manifest.permission.READ_MEDIA_IMAGES)
+            else -> arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+        if (perms.any { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }) { seguir(true); return }
+        runOnUiThread {
+            esperandoGaleria.add(seguir)
+            if (esperandoGaleria.size == 1) requestPermissions(perms, PEDIDO_GALERIA)
+        }
+    }
+
+    /** Apaga as fotos da galeria com UMA confirmação do Android (Android 11 em diante). */
+    fun apagarFotos(id: String, ids: List<Long>) = runOnUiThread {
+        if (Build.VERSION.SDK_INT < 30 || ids.isEmpty()) { responder(id, false, "Android antigo"); return@runOnUiThread }
+        try {
+            val pi = MediaStore.createDeleteRequest(contentResolver, ids.map { Galeria.uriDe(it) })
+            apagarPendente = id
+            @Suppress("DEPRECATION") startIntentSenderForResult(pi.intentSender, APAGAR_FOTOS, null, 0, 0, 0)
+        } catch (e: Exception) { responder(id, false, e.message ?: "erro") }
+    }
+
     inner class Cliente : WebViewClient() {
+        override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
+            Galeria.interceptar(this@MainActivity, request.url.toString())
+
         override fun shouldOverrideUrlLoading(view: WebView, req: WebResourceRequest): Boolean {
             val url = req.url.toString()
             if (url.startsWith(BASE) || url == BASE.removeSuffix("/")) return false
@@ -193,6 +231,7 @@ class MainActivity : Activity() {
     @Deprecated("Resposta do seletor de arquivos e da câmera.")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         @Suppress("DEPRECATION") super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == APAGAR_FOTOS) { apagarPendente?.let { responder(it, resultCode == RESULT_OK) }; apagarPendente = null; return }
         if (requestCode != ESCOLHER_ARQUIVO) return
         val cb = arquivoPendente ?: return
         arquivoPendente = null
@@ -206,6 +245,12 @@ class MainActivity : Activity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == PEDIDO_GALERIA) {
+            val ok = grantResults.any { it == PackageManager.PERMISSION_GRANTED }
+            val lista = esperandoGaleria.toList(); esperandoGaleria.clear()
+            lista.forEach { it(ok) }
+            return
+        }
         if (requestCode == PEDIDO_MICROFONE) {
             val p = permissaoPendente ?: return
             permissaoPendente = null

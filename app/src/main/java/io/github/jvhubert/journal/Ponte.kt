@@ -94,6 +94,26 @@ class Ponte(private val a: MainActivity) {
         JournalWidget.redesenhar(a)
     }
 
+    // ---------- fotos da galeria na entrevista (casca 6) ----------
+    /** Lista das fotos tiradas entre de e ate (ms): responde ok com o JSON, ou "sem-permissao". */
+    @JavascriptInterface
+    fun fotosDoPeriodo(id: String, de: String, ate: String) {
+        a.comGaleria { ok ->
+            if (!ok) { a.responder(id, false, "sem-permissao"); return@comGaleria }
+            Thread {
+                try { a.responder(id, true, Galeria.doPeriodo(a, de.toLong(), ate.toLong())) }
+                catch (e: Exception) { a.responder(id, false, e.message ?: "erro") }
+            }.start()
+        }
+    }
+
+    /** Apaga da galeria (ids em JSON); o Android pede uma confirmação só. */
+    @JavascriptInterface
+    fun apagarFotos(id: String, idsJson: String) {
+        val arr = org.json.JSONArray(idsJson)
+        a.apagarFotos(id, (0 until arr.length()).map { arr.getLong(it) })
+    }
+
     @JavascriptInterface
     fun abrirFora(url: String) = a.runOnUiThread { a.abrirFora(url) }
 
