@@ -20,6 +20,7 @@ android {
         versionCode = numeroBuild
         versionName = "casca $casca"
         manifestPlaceholders["casca"] = casca.toString()
+        buildConfigField("int", "CASCA", casca.toString())
     }
 
     signingConfigs {
@@ -47,8 +48,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    buildFeatures { buildConfig = true }
 }
 
 dependencies {
-    implementation("com.google.androidbrowserhelper:androidbrowserhelper:2.5.0")
+    // Só o FileProvider (foto da câmera). O resto usa o próprio Android.
+    implementation("androidx.core:core:1.13.1")
 }

@@ -1,49 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Android 13 em diante: sem isto os avisos do Journal (tarefas, aniversários, entrevista) não aparecem. -->
+    <!-- Casca 3 (17/11/2026): app de verdade, com janela própria (WebView), no lugar da moldura do Chrome. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Entrevista e ditado. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Trava com a digital. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <!-- Avisos (tarefas, aniversários, entrevista): a casca 4 passa a mandar daqui. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- Para achar o Chrome (o motor que mostra o Journal por dentro). -->
+    <!-- Para abrir links fora (Firefox, YouTube, Maps) e a câmera. -->
     <queries>
         <intent>
             <action android:name="android.intent.action.VIEW" />
             <category android:name="android.intent.category.BROWSABLE" />
             <data android:scheme="https" />
         </intent>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
     </queries>
 
     <application
         android:allowBackup="false"
+        android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Tema">
 
-        <!-- Liga o app ao site: o arquivo .well-known/assetlinks.json do site diz que este app é dele. -->
-        <meta-data
-            android:name="asset_statements"
-            android:resource="@string/asset_statements" />
-
         <activity
             android:name=".MainActivity"
-            android:alwaysRetainTaskState="true"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden|keyboard|smallestScreenSize|uiMode|density"
             android:exported="true"
             android:label="@string/app_name"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
 
-            <meta-data
-                android:name="android.support.customtabs.trusted.DEFAULT_URL"
-                android:value="https://jvhubert.github.io/johnnys-journal/?casca=${casca}" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.STATUS_BAR_COLOR"
-                android:resource="@color/fundo" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.NAVIGATION_BAR_COLOR"
-                android:resource="@color/fundo" />
-            <meta-data
-                android:name="android.support.customtabs.trusted.METADATA_SHARE_TARGET"
-                android:resource="@string/share_target" />
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/atalhos" />
@@ -72,18 +67,14 @@
             </intent-filter>
         </activity>
 
-        <!-- Os avisos do site passam a aparecer como avisos deste app, com o "J" na barra de status. -->
-        <service
-            android:name="com.google.androidbrowserhelper.trusted.DelegationService"
-            android:enabled="true"
-            android:exported="true">
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.arquivos"
+            android:exported="false"
+            android:grantUriPermissions="true">
             <meta-data
-                android:name="android.support.customtabs.trusted.SMALL_ICON"
-                android:resource="@drawable/ic_aviso" />
-            <intent-filter>
-                <action android:name="android.support.customtabs.trusted.TRUSTED_WEB_ACTIVITY_SERVICE" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </service>
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/caminhos" />
+        </provider>
     </application>
 </manifest>
