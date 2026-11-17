@@ -59,6 +59,26 @@ class Ponte(private val a: MainActivity) {
         a.runOnUiThread { a.startActivity(Intent.createChooser(i, "Compartilhar").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
     }
 
+    // ---------- avisos (casca 4) ----------
+    @JavascriptInterface
+    fun avisosLigados(): Boolean = Avisos.ligados(a)
+
+    /** Liga os avisos com o endereço e a senha da nuvem; responde "ok:N" (N avisos na lista) ou o erro. */
+    @JavascriptInterface
+    fun ligarAvisos(id: String, url: String, segredo: String) {
+        Thread {
+            try { a.responder(id, true, Avisos.ligar(a, url, segredo)) }
+            catch (e: Exception) { a.responder(id, false, e.message ?: "erro") }
+        }.start()
+    }
+
+    /** As tarefas mudaram no celular: busca a lista de novo (sem esperar os 15 min). */
+    @JavascriptInterface
+    fun atualizarAvisos() { Thread { runCatching { Avisos.atualizar(a) } }.start() }
+
+    @JavascriptInterface
+    fun testarAviso() = Avisos.testar(a)
+
     @JavascriptInterface
     fun abrirFora(url: String) = a.runOnUiThread { a.abrirFora(url) }
 
