@@ -100,6 +100,13 @@ class MainActivity : Activity() {
         super.onNewIntent(intent)
         setIntent(intent)
         val alvo = enderecoDe(intent, nova = true) ?: return
+        // Widget e avisos com o app já aberto: só o "#..." muda, então o site segue o endereço sem recarregar.
+        val hash = alvo.substringAfter('#', "")
+        val atual = web.url ?: ""
+        if (hash.isNotEmpty() && alvo.substringBefore('#') == BASE && atual.startsWith(BASE)) {
+            web.evaluateJavascript("window.JJ_SEGUIR ? JJ_SEGUIR('#" + hash.replace("'", "") + "') : (location.hash = '" + hash.replace("'", "") + "')", null)
+            return
+        }
         web.loadUrl(alvo)
     }
 

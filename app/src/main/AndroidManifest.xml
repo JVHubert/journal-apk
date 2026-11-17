@@ -71,6 +71,12 @@
             </intent-filter>
         </activity>
 
+        <receiver android:name=".JournalWidget" android:exported="true" android:label="Journal">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_info" />
+        </receiver>
         <receiver android:name=".AlarmeReceiver" android:exported="false" />
         <receiver android:name=".AcaoReceiver" android:exported="false" />
         <receiver android:name=".InicioReceiver" android:exported="true">

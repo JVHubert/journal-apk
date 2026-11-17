@@ -79,6 +79,21 @@ class Ponte(private val a: MainActivity) {
     @JavascriptInterface
     fun testarAviso() = Avisos.testar(a)
 
+    // ---------- widget (casca 5) ----------
+    /** Toque nas garrafas feito no widget e ainda não levado para os dados: {"dia","agua"} ou "". */
+    @JavascriptInterface
+    fun widgetAgua(): String = WidgetDados.pendente(a)
+
+    @JavascriptInterface
+    fun widgetAguaAplicada() = WidgetDados.aplicado(a)
+
+    /** O site manda a água e as tarefas de hoje para o widget mostrar. */
+    @JavascriptInterface
+    fun atualizarWidget(dia: String, agua: Int, tarefas: Int) {
+        WidgetDados.doSite(a, dia, agua, tarefas)
+        JournalWidget.redesenhar(a)
+    }
+
     @JavascriptInterface
     fun abrirFora(url: String) = a.runOnUiThread { a.abrirFora(url) }
 

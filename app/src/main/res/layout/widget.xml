@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget do Journal: água (4 garrafas) · tarefas de hoje · microfone. Uma faixa 4x1, escura, com a cor do app. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/raiz"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_fundo"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="14dp"
+    android:paddingEnd="8dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <ImageView android:id="@+id/g1" android:layout_width="26dp" android:layout_height="40dp" android:padding="3dp" android:src="@drawable/garrafa_vazia" />
+            <ImageView android:id="@+id/g2" android:layout_width="26dp" android:layout_height="40dp" android:padding="3dp" android:src="@drawable/garrafa_vazia" />
+            <ImageView android:id="@+id/g3" android:layout_width="26dp" android:layout_height="40dp" android:padding="3dp" android:src="@drawable/garrafa_vazia" />
+            <ImageView android:id="@+id/g4" android:layout_width="26dp" android:layout_height="40dp" android:padding="3dp" android:src="@drawable/garrafa_vazia" android:alpha="0.85" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/agua_txt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="3dp"
+            android:fontFamily="sans-serif-medium"
+            android:text="0 de 3 · água"
+            android:textColor="#AD9588"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/tarefas"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tarefas_num"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-black"
+            android:fontFeatureSettings="tnum"
+            android:text="–"
+            android:textColor="#F2E7DF"
+            android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/tarefas_txt"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="tarefas hoje"
+            android:textColor="#AD9588"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/voz"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/botao_voz"
+        android:contentDescription="Ditar tarefa">
+
+        <ImageView
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_mic" />
+    </FrameLayout>
+</LinearLayout>

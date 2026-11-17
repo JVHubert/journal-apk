@@ -5,4 +5,5 @@
     <string name="share_target" translatable="false">{\"action\": \"https://jvhubert.github.io/johnnys-journal/\", \"method\": \"GET\", \"params\": {\"title\": \"title\", \"text\": \"text\", \"url\": \"url\"}}</string>
     <string name="atalho_hoje" translatable="false">Tarefas de hoje</string>
     <string name="atalho_entrevista" translatable="false">Entrevista do dia</string>
+    <string name="widget_descricao" translatable="false">Água do dia, tarefas de hoje e tarefa por voz</string>
 </resources>
