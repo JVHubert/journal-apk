@@ -41,7 +41,7 @@ object Avisos {
     fun ligar(c: Context, url: String, segredo: String): String {
         prefs(c).edit().putString("url", url.trimEnd('/')).putString("segredo", segredo).apply()
         criarCanal(c)
-        agendarBusca(c)
+        garantirBusca(c)
         runCatching { pedir(c, "POST", "/avisos/nativo", JSONObject().put("ligado", true).put("aparelho", Build.MODEL).toString()) }
         return atualizar(c)
     }
@@ -59,8 +59,16 @@ object Avisos {
     @Synchronized
     fun atualizar(c: Context): String {
         if (!ligados(c)) return "desligados"
+        garantirBusca(c)
         val corpo = pedir(c, "GET", "/avisos/proximos?horas=48", null)
         val lista = JSONObject(corpo).getJSONArray("avisos")
+        agendarLista(c, lista, true)
+        prefs(c).edit().putString("cache", lista.toString()).putLong("buscou", System.currentTimeMillis()).apply()
+        return "ok:${lista.length()}"
+    }
+
+    /** Agenda a lista. Os já vencidos só aparecem quando ela acabou de vir da nuvem (a guardada pode ter tarefa já feita). */
+    private fun agendarLista(c: Context, lista: JSONArray, mostrarVencidos: Boolean) {
         val p = prefs(c)
         val am = c.getSystemService(AlarmManager::class.java)
         // desfaz o que estava agendado e agenda a lista nova
@@ -73,14 +81,13 @@ object Avisos {
             val chave = a.getString("chave")
             if (jaMostrado(c, chave)) continue
             val quando = a.getLong("quando")
-            if (quando <= agora + 1000) { mostrar(c, a); continue }
+            if (quando <= agora + 1000) { if (mostrarVencidos) mostrar(c, a); continue }
             val pi = pendente(c, chave, a)
             if (Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, quando, pi)
             else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, quando, pi)
             novos.put(chave)
         }
-        p.edit().putString("agendados", novos.toString()).putString("cache", lista.toString()).putLong("buscou", agora).apply()
-        return "ok:${lista.length()}"
+        p.edit().putString("agendados", novos.toString()).apply()
     }
 
     private fun pendente(c: Context, chave: String, aviso: JSONObject?): PendingIntent {
@@ -131,14 +138,18 @@ object Avisos {
     fun testar(c: Context) = mostrar(c, JSONObject().put("titulo", "Avisos ligados").put("corpo", "É assim que os lembretes vão chegar.").put("tag", "teste").put("url", "#"))
 
     /** Busca a lista a cada 15 min (o Android junta com outras tarefas para economizar bateria). */
-    fun agendarBusca(c: Context) {
+    private fun agendarBusca(c: Context) {
         val js = c.getSystemService(JobScheduler::class.java)
+        if (js.getPendingJob(JOB) != null) return
         js.schedule(JobInfo.Builder(JOB, ComponentName(c, BuscaJob::class.java))
             .setPeriodic(15 * 60_000L)
             .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
             .setPersisted(true)
             .build())
     }
+
+    /** A busca automática é um reforço: se o Android recusar, os avisos e o app continuam funcionando. */
+    private fun garantirBusca(c: Context) { runCatching { agendarBusca(c) } }
 
     fun pedir(c: Context, metodo: String, rota: String, corpo: String?): String {
         val p = prefs(c)
@@ -159,10 +170,12 @@ object Avisos {
     }
 
     /** Depois de reiniciar o celular: agenda de novo o que estava guardado e busca a lista. */
+    @Synchronized
     fun reagendarDoCache(c: Context) {
         if (!ligados(c)) return
-        agendarBusca(c)
-        Thread { runCatching { atualizar(c) } }.start()
+        garantirBusca(c)
+        // primeiro o que está guardado (funciona sem internet); a lista nova da nuvem vem em seguida
+        runCatching { agendarLista(c, JSONArray(prefs(c).getString("cache", "[]")), false) }
     }
 }
 
@@ -187,7 +200,17 @@ class AcaoReceiver : BroadcastReceiver() {
 }
 
 class InicioReceiver : BroadcastReceiver() {
-    override fun onReceive(c: Context, i: Intent) = Avisos.reagendarDoCache(c)
+    override fun onReceive(c: Context, i: Intent) {
+        val fim = goAsync()
+        Thread {
+            try {
+                Avisos.reagendarDoCache(c)
+                // o Android dá poucos segundos ao sinal de ligar: se a rede demorar, a busca automática completa depois
+                val busca = Thread { runCatching { Avisos.atualizar(c) } }.apply { start() }
+                busca.join(8000)
+            } finally { fim.finish() }
+        }.start()
+    }
 }
 
 class BuscaJob : JobService() {

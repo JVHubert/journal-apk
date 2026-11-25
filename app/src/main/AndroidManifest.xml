@@ -14,6 +14,8 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Exigida pelo Android para a busca de avisos que espera ter internet (sem ela, o app quebrava ao ligar o celular). -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Fotos do dia na entrevista: ler a galeria (no Android 14, pode ser "só algumas fotos"). -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
